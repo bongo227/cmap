@@ -66,6 +66,12 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 	} else if itype.Kind() == reflect.Int {
 		s := cint(" %d", ivalue.Int())
 		fmt.Printf("%s\n", s)
+	} else if itype.Kind() == reflect.Float32 {
+		s := cint(" %f", ivalue.Float())
+		fmt.Printf("%s\n", s)
+	} else if itype.Kind() == reflect.Float64 {
+		s := cint(" %f", ivalue.Float())
+		fmt.Printf("%s\n", s)
 	} else if itype.Kind() == reflect.Struct {
 		if ivalue.NumField() == 0 {
 			fmt.Println()
