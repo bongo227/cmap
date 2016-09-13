@@ -13,10 +13,24 @@ func Dump(item interface{}, name string) {
 	itype := reflect.TypeOf(item)
 	ivalue := reflect.ValueOf(item)
 
-	printThis(name, itype, ivalue, "")
+	out := ""
+
+	printThis(name, itype, ivalue, "", &out)
+	fmt.Println(out)
 }
 
-func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth string) {
+func SDump(item interface{}, name string) string {
+	itype := reflect.TypeOf(item)
+	ivalue := reflect.ValueOf(item)
+
+	out := ""
+
+	printThis(name, itype, ivalue, "", &out)
+	return out
+}
+
+func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth string, out *string) {
+
 	cname := color.New(color.FgHiCyan).SprintfFunc()
 	ctype := color.New(color.FgBlue).SprintfFunc()
 	cstring := color.New(color.FgYellow).SprintfFunc()
@@ -36,70 +50,70 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 			depth += strings.Repeat(" ", len(typeName))
 		}
 
-		fmt.Print(s)
+		*out += s
 	}
 
 	if itype.Kind() == reflect.Slice {
 
 		if ivalue.Len() == 0 {
-			fmt.Println()
+			*out += "\n"
 		}
 
 		for i := 0; i < ivalue.Len(); i++ {
 			if ivalue.Len() == 1 {
-				fmt.Printf(" ─── %s ", cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ")
+				*out += fmt.Sprintf(" ─── %s ", cposition("%d.", i))
+				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ", out)
 			} else if i == 0 {
-				fmt.Printf(" ─┬─ %s ", cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ")
+				*out += fmt.Sprintf(" ─┬─ %s ", cposition("%d.", i))
+				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ", out)
 			} else if i == ivalue.Len()-1 {
-				fmt.Printf("%s  └─ %s ", depth, cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ")
+				*out += fmt.Sprintf("%s  └─ %s ", depth, cposition("%d.", i))
+				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ", out)
 			} else {
-				fmt.Printf("%s  ├─ %s ", depth, cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ")
+				*out += fmt.Sprintf("%s  ├─ %s ", depth, cposition("%d.", i))
+				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ", out)
 			}
 		}
 	} else if itype.Kind() == reflect.String {
 		s := cstring(" %s", strconv.Quote(ivalue.String()))
-		fmt.Printf("%s\n", s)
+		*out += fmt.Sprintf("%s\n", s)
 	} else if itype.Kind() == reflect.Int {
 		s := cint(" %d", ivalue.Int())
-		fmt.Printf("%s\n", s)
+		*out += fmt.Sprintf("%s\n", s)
 	} else if itype.Kind() == reflect.Float32 {
 		s := cint(" %f", ivalue.Float())
-		fmt.Printf("%s\n", s)
+		*out += fmt.Sprintf("%s\n", s)
 	} else if itype.Kind() == reflect.Float64 {
 		s := cint(" %f", ivalue.Float())
-		fmt.Printf("%s\n", s)
+		*out += fmt.Sprintf("%s\n", s)
 	} else if itype.Kind() == reflect.Struct {
 		if ivalue.NumField() == 0 {
-			fmt.Println()
+			*out += "\n"
 		}
 
 		for i := 0; i < ivalue.NumField(); i++ {
 			newDepth := ""
 			if ivalue.NumField() == 1 {
-				fmt.Printf(" ─── ")
+				*out += " ─── "
 				newDepth = depth + "     "
 			} else if i == 0 {
-				fmt.Printf(" ─┬─ ")
+				*out += " ─┬─ "
 				newDepth = depth + "  |  "
 			} else if i == ivalue.NumField()-1 {
-				fmt.Printf("%s  └─ ", depth)
+				*out += fmt.Sprintf("%s  └─ ", depth)
 				newDepth = depth + "     "
 			} else {
-				fmt.Printf("%s  ├─ ", depth)
+				*out += fmt.Sprintf("%s  ├─ ", depth)
 				newDepth = depth + "  |  "
 			}
 
-			printThis(itype.Field(i).Name, ivalue.Field(i).Type(), ivalue.Field(i), newDepth)
+			printThis(itype.Field(i).Name, ivalue.Field(i).Type(), ivalue.Field(i), newDepth, out)
 		}
 	} else if itype.Kind() == reflect.Interface {
 		if ivalue.Elem() == reflect.ValueOf(nil) {
-			fmt.Printf(cnil("nil\n"))
+			*out += cnil("nil\n")
 		} else {
-			printThis(name, ivalue.Elem().Type(), ivalue.Elem(), depth)
+			printThis(name, ivalue.Elem().Type(), ivalue.Elem(), depth, out)
 		}
 	} else {
 		panic("Unrecognized type")
