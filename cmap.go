@@ -35,6 +35,7 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 	ctype := color.New(color.FgBlue).SprintfFunc()
 	cstring := color.New(color.FgYellow).SprintfFunc()
 	cint := color.New(color.FgHiGreen).SprintfFunc()
+	cbool := color.New(color.FgHiMagenta).SprintfFunc()
 	cposition := color.New(color.FgHiBlack).SprintfFunc()
 	cnil := color.New(color.FgRed).SprintfFunc()
 
@@ -86,6 +87,9 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 	} else if itype.Kind() == reflect.Float64 {
 		s := cint(" %f", ivalue.Float())
 		*out += fmt.Sprintf("%s\n", s)
+	} else if itype.Kind() == reflect.Bool {
+		s := cbool(" %t", ivalue.Bool())
+		*out += fmt.Sprintf("%s\n", s)
 	} else if itype.Kind() == reflect.Struct {
 		if ivalue.NumField() == 0 {
 			*out += "\n"
@@ -116,6 +120,6 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 			printThis(name, ivalue.Elem().Type(), ivalue.Elem(), depth, out)
 		}
 	} else {
-		panic("Unrecognized type")
+		*out += fmt.Sprintf("%s\n", "Unrecognized type")
 	}
 }
