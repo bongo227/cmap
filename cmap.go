@@ -29,6 +29,13 @@ func SDump(item interface{}, name string) string {
 	return out
 }
 
+func SRawDump(item interface{}, name string) string {
+	color.NoColor = true
+	defer func() { color.NoColor = false }()
+
+	return SDump(item, name)
+}
+
 func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth string, out *string) {
 
 	cname := color.New(color.FgHiCyan).SprintfFunc()
