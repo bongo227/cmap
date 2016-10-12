@@ -9,13 +9,13 @@ import (
 	"github.com/fatih/color"
 )
 
-func Dump(item interface{}, name string) {
+func Dump(item interface{}) {
 	itype := reflect.TypeOf(item)
 	ivalue := reflect.ValueOf(item)
 
 	out := ""
 
-	printThis(name, itype, ivalue, "", &out)
+	printThis("root", itype, ivalue, "", &out)
 	fmt.Println(out)
 }
 
