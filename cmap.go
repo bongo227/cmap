@@ -9,44 +9,65 @@ import (
 	"github.com/fatih/color"
 )
 
-func Dump(item interface{}) {
-	itype := reflect.TypeOf(item)
-	ivalue := reflect.ValueOf(item)
+const (
+	escape = "\x1b"
+	reset  = escape + "[0m"
+)
 
-	out := ""
+var (
+	cposition = colorFunc("30")
+	cnil      = colorFunc("31")
+	cint      = colorFunc("32")
+	cstring   = colorFunc("33")
+	ctype     = colorFunc("34")
+	cbool     = colorFunc("35")
+	cname     = colorFunc("36")
 
-	printThis("root", itype, ivalue, "", &out)
-	fmt.Println(out)
+	// Packages controls wether the package a struct comes from is printed
+	Packages = true
+
+	// Color controls wether color codes are outputed
+	Color = true
+)
+
+func colorFunc(colorCode string) func(string, ...interface{}) string {
+	return func(format string, a ...interface{}) string {
+		if Color {
+			return escape + "[" + colorCode + "m" + fmt.Sprintf(format, a...) + reset
+		}
+
+		return fmt.Sprintf(format, a...)
+	}
 }
 
-func SDump(item interface{}, name string) string {
+// Tree pretty prints data structures in color in the style of horizontal tree
+func Tree(item interface{}) {
+	fmt.Println(STree(item))
+}
+
+// STree returns the string result of tree
+func STree(item interface{}) string {
+	if !Color {
+		color.NoColor = true
+		defer func() { color.NoColor = false }()
+	}
+
 	itype := reflect.TypeOf(item)
 	ivalue := reflect.ValueOf(item)
 
 	out := ""
 
-	printThis(name, itype, ivalue, "", &out)
+	branchPrint("", itype, ivalue, "", &out)
 	return out
 }
 
-func SRawDump(item interface{}, name string) string {
-	color.NoColor = true
-	defer func() { color.NoColor = false }()
-
-	return SDump(item, name)
-}
-
-func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth string, out *string) {
-
-	cname := color.New(color.FgHiCyan).SprintfFunc()
-	ctype := color.New(color.FgBlue).SprintfFunc()
-	cstring := color.New(color.FgYellow).SprintfFunc()
-	cint := color.New(color.FgHiGreen).SprintfFunc()
-	cbool := color.New(color.FgHiMagenta).SprintfFunc()
-	cposition := color.New(color.FgHiBlack).SprintfFunc()
-	cnil := color.New(color.FgRed).SprintfFunc()
-
-	typeName := strings.Replace(itype.String(), "compiler.", "", 100)
+func branchPrint(name string, itype reflect.Type, ivalue reflect.Value, depth string, out *string) {
+	typeName := itype.String()
+	if !Packages {
+		if lastDot := strings.LastIndex(typeName, "."); lastDot > 0 {
+			typeName = typeName[lastDot+1 : len(typeName)]
+		}
+	}
 
 	if itype.Kind() != reflect.Interface {
 		s := ""
@@ -61,8 +82,10 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 		*out += s
 	}
 
-	if itype.Kind() == reflect.Slice {
+	switch itype.Kind() {
 
+	// Slices
+	case reflect.Slice:
 		if ivalue.Len() == 0 {
 			*out += "\n"
 		}
@@ -70,34 +93,41 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 		for i := 0; i < ivalue.Len(); i++ {
 			if ivalue.Len() == 1 {
 				*out += fmt.Sprintf(" ─── %s ", cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ", out)
+				branchPrint("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ", out)
 			} else if i == 0 {
 				*out += fmt.Sprintf(" ─┬─ %s ", cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ", out)
+				branchPrint("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ", out)
 			} else if i == ivalue.Len()-1 {
 				*out += fmt.Sprintf("%s  └─ %s ", depth, cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ", out)
+				branchPrint("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"        ", out)
 			} else {
 				*out += fmt.Sprintf("%s  ├─ %s ", depth, cposition("%d.", i))
-				printThis("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ", out)
+				branchPrint("", ivalue.Index(i).Type(), ivalue.Index(i), depth+"  │     ", out)
 			}
 		}
-	} else if itype.Kind() == reflect.String {
+
+	// Strings
+	case reflect.String:
 		s := cstring(" %s", strconv.Quote(ivalue.String()))
 		*out += fmt.Sprintf("%s\n", s)
-	} else if itype.Kind() == reflect.Int {
+
+	// Intergers
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		s := cint(" %d", ivalue.Int())
 		*out += fmt.Sprintf("%s\n", s)
-	} else if itype.Kind() == reflect.Float32 {
+
+	// Floats
+	case reflect.Float32, reflect.Float64:
 		s := cint(" %f", ivalue.Float())
 		*out += fmt.Sprintf("%s\n", s)
-	} else if itype.Kind() == reflect.Float64 {
-		s := cint(" %f", ivalue.Float())
-		*out += fmt.Sprintf("%s\n", s)
-	} else if itype.Kind() == reflect.Bool {
+
+	// Booleans
+	case reflect.Bool:
 		s := cbool(" %t", ivalue.Bool())
 		*out += fmt.Sprintf("%s\n", s)
-	} else if itype.Kind() == reflect.Struct {
+
+	// Structs
+	case reflect.Struct:
 		if ivalue.NumField() == 0 {
 			*out += "\n"
 		}
@@ -118,15 +148,19 @@ func printThis(name string, itype reflect.Type, ivalue reflect.Value, depth stri
 				newDepth = depth + "  |  "
 			}
 
-			printThis(itype.Field(i).Name, ivalue.Field(i).Type(), ivalue.Field(i), newDepth, out)
+			branchPrint(itype.Field(i).Name, ivalue.Field(i).Type(), ivalue.Field(i), newDepth, out)
 		}
-	} else if itype.Kind() == reflect.Interface {
+
+	// Interfaces
+	case reflect.Interface:
 		if ivalue.Elem() == reflect.ValueOf(nil) {
 			*out += cnil("nil\n")
 		} else {
-			printThis(name, ivalue.Elem().Type(), ivalue.Elem(), depth, out)
+			branchPrint(name, ivalue.Elem().Type(), ivalue.Elem(), depth, out)
 		}
-	} else {
-		*out += fmt.Sprintf("%s\n", "Unrecognized type")
+
+	default:
+		*out += fmt.Sprintf("%s\n", " Unrecognized type")
+
 	}
 }
