@@ -1,6 +1,10 @@
-#cmap - Deep pretty printer in color
+#cmap - Deep pretty printer in color#
 
-#Usage
+##Usage##
 ```go
-cmap.Dump(interface{})
+// Pretty print a data structure (as a tree)
+cmap.Tree(interface{})
+
+// Pretty printed string of a data structure (as a tree)
+cmap.STree(interface{})
 ```
