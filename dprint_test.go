@@ -1,4 +1,4 @@
-package cmap
+package dprint
 
 import (
 	"fmt"
@@ -68,19 +68,19 @@ func TestDump(t *testing.T) {
 `},
 		{bool(false), `bool false
 `},
-		{example1{"example", 123}, `cmap.example1 ─┬─ first string "example"
+		{example1{"example", 123}, `dprint.example1 ─┬─ first string "example"
                └─ second int 123
 `},
-		{example2{}, `cmap.example2
+		{example2{}, `dprint.example2
 `},
-		{example3{2.5}, `cmap.example3 ─── first float32 2.500000
+		{example3{2.5}, `dprint.example3 ─── first float32 2.500000
 `},
-		{example4{1, 2, 3, 4}, `cmap.example4 ─┬─ first int 1
+		{example4{1, 2, 3, 4}, `dprint.example4 ─┬─ first int 1
                ├─ second int 2
                ├─ third int 3
                └─ forth int 4
 `},
-		{[]interface{}{example2{}, nil}, `[]interface {} ─┬─ 0. cmap.example2
+		{[]interface{}{example2{}, nil}, `[]interface {} ─┬─ 0. dprint.example2
                 └─ 1. nil
 `},
 	})
