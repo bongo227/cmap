@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/fatih/color"
 )
 
 const (
@@ -118,11 +116,6 @@ func Tree(item interface{}) {
 
 // STree returns the string result of tree
 func STree(item interface{}) string {
-	if !Color {
-		color.NoColor = true
-		defer func() { color.NoColor = false }()
-	}
-
 	itype := reflect.TypeOf(item)
 	ivalue := reflect.ValueOf(item)
 
