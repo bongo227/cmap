@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/fatih/color"
 )
@@ -15,13 +16,13 @@ const (
 )
 
 var (
-	cposition = colorFunc("30")
-	cnil      = colorFunc("31")
-	cint      = colorFunc("32")
-	cstring   = colorFunc("33")
-	ctype     = colorFunc("34")
-	cbool     = colorFunc("35")
-	cname     = colorFunc("36")
+	cposition = colorFunc("30") // Black/Grey
+	cnil      = colorFunc("31") // Red
+	cint      = colorFunc("32") // Green
+	cstring   = colorFunc("33") // Yellow
+	ctype     = colorFunc("34") // Blue
+	cbool     = colorFunc("35") // Magenta
+	cname     = colorFunc("36") // Cyan
 
 	// Packages controls wether the package a struct comes from is printed
 	Packages = true
@@ -37,6 +38,76 @@ func colorFunc(colorCode string) func(string, ...interface{}) string {
 		}
 
 		return fmt.Sprintf(format, a...)
+	}
+}
+
+// Dump prints data structures in color in a golang style
+func Dump(item interface{}) {
+	fmt.Println(SDump(item))
+}
+
+// SDump returns the string result of Dump
+func SDump(item interface{}) string {
+	s := ""
+	itype := reflect.TypeOf(item)
+	ivalue := reflect.ValueOf(item)
+
+	linePrint(itype, ivalue, "", &s)
+	return s
+}
+
+func linePrint(itype reflect.Type, ivalue reflect.Value, depth string, out *string) {
+	typeName := itype.String()
+
+	// Remove local package
+	if lastDot := strings.LastIndex(typeName, "."); lastDot > 0 && unicode.IsLower(rune(typeName[lastDot+1])) {
+		typeName = typeName[lastDot+1 : len(typeName)]
+	}
+
+	switch itype.Kind() {
+
+	// Strings
+	case reflect.String:
+		*out += cstring("%q", ivalue.String())
+
+	// Intergers
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		*out += cint("%d", ivalue.Int())
+
+	// Floats
+	case reflect.Float32, reflect.Float64:
+		*out += cint("%f", ivalue.Float())
+
+	// Bools
+	case reflect.Bool:
+		*out += cbool("%t", ivalue.Bool())
+
+	// Structures
+	case reflect.Struct:
+		*out += fmt.Sprintf("%s{\n", ctype(typeName))
+
+		for i := 0; i < ivalue.NumField(); i++ {
+			*out += fmt.Sprintf("%s%s: ", depth+"    ", cname(itype.Field(i).Name))
+			linePrint(ivalue.Field(i).Type(), ivalue.Field(i), depth+"    ", out)
+			*out += fmt.Sprintf(",\n")
+		}
+
+		*out += fmt.Sprintf("%s}", depth)
+
+	// Slices
+	case reflect.Slice:
+		*out += fmt.Sprintf("[]%s{\n", ctype(typeName[2:]))
+
+		for i := 0; i < ivalue.Len(); i++ {
+			*out += fmt.Sprintf("%s", depth+"    ")
+			linePrint(ivalue.Index(i).Type(), ivalue.Index(i), depth+"    ", out)
+			*out += fmt.Sprintf(",\n")
+		}
+
+		*out += fmt.Sprintf("%s}", depth)
+
+	default:
+		*out += "Unrecognised type"
 	}
 }
 

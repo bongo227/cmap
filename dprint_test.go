@@ -10,25 +10,58 @@ type testCase struct {
 	out string
 }
 
+type example0 struct{}
+
 type example1 struct {
+	first float32
+}
+
+type example2 struct {
 	first  string
 	second int
 }
 
-type example2 struct{}
-
 type example3 struct {
-	first float32
-}
-
-type example4 struct {
 	first  int
 	second int
 	third  int
-	forth  int
 }
 
 func TestDump(t *testing.T) {
+	Color = false
+
+	testCases := func(cases []testCase) {
+		for _, c := range cases {
+			dump := SDump(c.in)
+			if fmt.Sprintf("%q", c.out) != fmt.Sprintf("%q", dump) {
+				t.Errorf("\nExpected:\n%q\nGot:\n%q", c.out, dump)
+			}
+		}
+	}
+
+	testCases([]testCase{
+		{string(`1`), `"1"`},
+		{int(1), `1`},
+		{int8(1), `1`},
+		{int16(1), `1`},
+		{int32(1), `1`},
+		{int64(1), `1`},
+		{float32(1.0), `1.000000`},
+		{float64(1.0), `1.000000`},
+		{example2{"ben", 12}, `example2{
+    first: "ben",
+    second: 12,
+}`},
+		{[]int{1, 2, 3, 4}, `[]int{
+    1,
+    2,
+    3,
+    4,
+}`},
+	})
+}
+
+func TestTree(t *testing.T) {
 	Color = false
 
 	testCases := func(cases []testCase) {
@@ -68,19 +101,18 @@ func TestDump(t *testing.T) {
 `},
 		{bool(false), `bool false
 `},
-		{example1{"example", 123}, `dprint.example1 ─┬─ first string "example"
+		{example2{"example", 123}, `dprint.example2 ─┬─ first string "example"
                  └─ second int 123
 `},
-		{example2{}, `dprint.example2
+		{example0{}, `dprint.example0
 `},
-		{example3{2.5}, `dprint.example3 ─── first float32 2.500000
+		{example1{2.5}, `dprint.example1 ─── first float32 2.500000
 `},
-		{example4{1, 2, 3, 4}, `dprint.example4 ─┬─ first int 1
+		{example3{1, 2, 3}, `dprint.example3 ─┬─ first int 1
                  ├─ second int 2
-                 ├─ third int 3
-                 └─ forth int 4
+                 └─ third int 3
 `},
-		{[]interface{}{example2{}, nil}, `[]interface {} ─┬─ 0. dprint.example2
+		{[]interface{}{example0{}, nil}, `[]interface {} ─┬─ 0. dprint.example0
                 └─ 1. nil
 `},
 	})
@@ -88,7 +120,7 @@ func TestDump(t *testing.T) {
 	Packages = false
 
 	testCases([]testCase{testCase{
-		example1{"example", 123}, `example1 ─┬─ first string "example"
+		example2{"example", 123}, `example2 ─┬─ first string "example"
           └─ second int 123
 `},
 	})
@@ -96,7 +128,7 @@ func TestDump(t *testing.T) {
 	Color = true
 
 	testCases([]testCase{testCase{
-		example1{"example2", 321}, "\x1b[34mexample1\x1b[0m ─┬─ \x1b[36mfirst\x1b[0m\x1b[34m string\x1b[0m\x1b[33m \"example2\"\x1b[0m\n          └─ \x1b[36msecond\x1b[0m\x1b[34m int\x1b[0m\x1b[32m 321\x1b[0m\n"},
+		example2{"example2", 321}, "\x1b[34mexample2\x1b[0m ─┬─ \x1b[36mfirst\x1b[0m\x1b[34m string\x1b[0m\x1b[33m \"example2\"\x1b[0m\n          └─ \x1b[36msecond\x1b[0m\x1b[34m int\x1b[0m\x1b[32m 321\x1b[0m\n"},
 	})
 
 }
