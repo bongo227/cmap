@@ -104,6 +104,14 @@ func linePrint(itype reflect.Type, ivalue reflect.Value, depth string, out *stri
 
 		*out += fmt.Sprintf("%s}", depth)
 
+	// Interface
+	case reflect.Interface:
+		if ivalue.Elem() == reflect.ValueOf(nil) {
+			*out += cnil("nil")
+		} else {
+			linePrint(ivalue.Elem().Type(), ivalue.Elem(), depth, out)
+		}
+
 	default:
 		*out += "Unrecognised type"
 	}

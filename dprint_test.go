@@ -58,6 +58,11 @@ func TestDump(t *testing.T) {
     3,
     4,
 }`},
+		{[]interface{}{example0{}, nil}, `[]interface {}{
+    example0{
+    },
+    nil,
+}`},
 	})
 }
 
