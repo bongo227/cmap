@@ -112,8 +112,13 @@ func linePrint(itype reflect.Type, ivalue reflect.Value, depth string, out *stri
 			linePrint(ivalue.Elem().Type(), ivalue.Elem(), depth, out)
 		}
 
+	// Pointer
+	case reflect.Ptr:
+		fmt.Printf("*")
+		linePrint(ivalue.Elem().Type(), ivalue.Elem(), depth, out)
+
 	default:
-		*out += "Unrecognised type"
+		*out += "Unrecognised type: " + itype.Kind().String()
 	}
 }
 
